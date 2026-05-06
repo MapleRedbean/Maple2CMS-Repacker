@@ -1,87 +1,113 @@
-# MapleStory2 Image Resource Extractor
+# MapleStory2 Resource Extractors
 
-从冒险岛2（MapleStory2）的 `Image_*.m2d` 资源包中提取所有图片文件。
+冒险岛2（MapleStory2）资源文件批量提取工具集。
 
-## 最终结果
+## 提取总览
 
-| 指标 | 数值 |
-|------|------|
-| 文件总数 | 18,536 |
-| 提取成功率 | **100%** |
-| 总大小 | 1,267 MB |
-| 格式分布 | PNG: 16,541 / DDS: 1,992 / BMP: 2 |
-| 子目录 | 22 个 |
+| 资源包 | 格式 | 文件数 | 提取率 | 文件格式 |
+|--------|------|--------|--------|----------|
+| Image | OS2F | 18,536 | **100%** | PNG: 16,541 / DDS: 1,992 / BMP: 2 |
+| Exported | OS2F | 15,305 | **100%** | .flat: 13,378 / .xblock: 1,927 |
+| Map | OS2F | 21,551 | **100%** | .nif (Gamebryo) |
+| Effect | OS2F | 16,535 | **100%** | .nif (Gamebryo) |
+| Item | OS2F | 8,193 | **99.8%** | .nif (Gamebryo) |
+| Npc | OS2F | 37,097 | **100%** | .kfm / .kf / .nif |
+| Textures | OS2F | 34,446 | **100%** | .dds |
+| Movie | **PS2F** | 392 | **100%** | .usm (CRI USM) |
+| **合计** | | **152,055** | **~99.9%** | |
 
-## 依赖
+## 环境要求
 
 ```bash
 pip install pycryptodome
 ```
 
-Python 3.7+，无其他依赖。
+Python 3.7+
 
-## 快速开始
+---
 
-### 准备材料
+## 通用提取工具
 
-| 文件 | 说明 |
+一次提取所有资源（Image / Exported / Map / Effect / Item / Npc / Textures / Movie）：
+
+```bash
+# 提取全部
+python ms2_extract_all.py --data-dir "D:\WeGameApps\冒险岛2\Client\Data"
+
+# 只提取指定资源（支持 Image/Exported/Map/Effect/Item/Npc/Textures/Movie）
+python ms2_extract_all.py --resource Movie --data-dir "D:\WeGameApps\冒险岛2\Client\Data"
+
+# 指定输出目录
+python ms2_extract_all.py --output-dir D:\output
+```
+
+---
+
+## 解密方案
+
+### OS2F（7 类资源：Image~Textures）
+```
+M2D → base64 解码 → AES-CTR(ECB, key=file_size&0x7F) → zlib 解压 → 原始文件
+```
+
+### PS2F（Movie）
+```
+M2D → XOR(PS2F_XOR_KEY, 2048B循环, 32位字) → 原始 .usm 文件
+（无 base64 编码，无 zlib 压缩）
+```
+
+### Movie M2H 解密
+```
+M2H → base64 分两段:
+  CSV: base64 → AES-CTR(PS2F key[depends]) → zlib → CSV
+  FT:  base64 → AES-CTR(PS2F key[100], len&0x7F) → zlib → FT (40B×392)
+```
+
+---
+
+## FileTable 格式（OS2F & PS2F）
+
+每个条目 40 字节，10 个 uint32：
+
+| 偏移 | OS2F 字段 | PS2F 字段 | 含义 |
+|------|-----------|-----------|------|
+| +0x00 | V0 | V0 | 加密标志（0xEE000009=AES+zlib, 0xFF000000=XOR） |
+| +0x04 | V1 | V1 | 文件索引 |
+| +0x08 | V2 | V2 | block_size（M2D 中的块大小） |
+| +0x10 | V4 | V4 | file_size（OS2F: key推导用; PS2F: 原始文件大小） |
+| +0x18 | V6 | V6 | raw_size（解压后大小） |
+| +0x20 | V8 | V8 | offset（M2D 中的字节偏移） |
+
+---
+
+## 文件清单
+
+```
+github/                             14.5 MB
+├── ms2_extract_all.py              ← 通用提取工具（OS2F + PS2F）
+├── ms2_image_extract.py            ← Image 单资源提取（旧版）
+├── ms2_exported_extract.py         ← Exported 单资源提取（旧版）
+├── orion2_keys.json                ← 密钥表（含 PS2F_XOR_KEY）
+├── requirements.txt                ← pip install pycryptodome
+├── README.md
+│
+├── Image.m2h.header + filetable_decrypted.bin
+├── Exported.m2h.header + Exported.filetable.decrypted.bin
+├── Map.m2h.header + Map.filetable.decrypted_v2.bin
+├── Effect.m2h.header + Effect.filetable.decrypted_v2.bin
+├── Item.m2h.header + Item.filetable.decrypted_v2.bin
+├── Npc_02.header + Npc_02.filetable.decrypted_v2.bin
+├── Textures.m2h.header + Textures.filetable.decrypted_v2.bin
+└── Movie.m2h.header + Movie.filetable.decrypted_v2.bin
+```
+
+---
+
+## 不可提取资源
+
+| 资源 | 原因 |
 |------|------|
-| `Image_*.m2d` | 游戏 Resource 目录中 22 个资源包 |
-| `Image.m2h.header` | 解密后的 CSV（index,m2d_id,filepath） |
-| `filetable_decrypted.bin` | 解密后的 FileTable（40 字节/条目） |
-| `orion2_keys.json` | AES 密钥表 |
-
-### 运行
-
-```bash
-python ms2_image_extract.py --m2d "D:\WeGameApps\冒险岛2\Client\Data\Resource" --out ./output
-```
-
-### 验证模式
-
-```bash
-python ms2_image_extract.py --m2d ./Resource --dry-run
-```
-
-## 命令行参数
-
-```
---m2d  PATH    游戏 Resource 目录 [必需]
---csv  PATH    解密后的 CSV [默认: Image.m2h.header]
---ft   PATH    解密后的 FileTable [默认: filetable_decrypted.bin]
---keys PATH    AES 密钥表 [默认: orion2_keys.json]
---out  PATH    输出目录 [默认: ./extracted]
---dry-run      仅验证，不提取
-```
-
-## 解密流程
-
-```
-M2D 原始文件的每个文件块独立处理：
-
-1. 读取 base64 块 (offset + block_size)
-2. Base64 解码 (扣除 = 填充)
-3. AES-CTR 解密 (key = file_size & 0x7F, counter 独立)
-4. zlib 解压 (如果首字节 0x78)
-5. Magic 校验 (PNG 0x89504E47 / DDS 0x44445320 / BMP 0x424D)
-6. 保存文件
-```
-
-## 关键技术点
-
-1. **每个文件独立加密** — AES counter 逐文件重置，不能整体解密
-2. **密钥 = file_size & 0x7F** — 文件大小低 7 位决定 key 索引
-3. **FileTable V8 偏移量指向原始 M2D 文件** — 非解码后数据
-4. **Base64 块之间无分隔符** — 直接拼接，按 V2 长度切割
-
-## FileTable 条目结构（40 字节）
-
-```
-[V0: const] [V1: index] [V2: block_size] [V3: 0]
-[V4: file_size] [V5: 0] [V6: file_size] [V7: 0]
-[V8: offset] [V9: 0]
-```
-
-## 许可
+| Xml.m2h (NS2F) | 有专用工具，不在此工具包内 |
+| MS2F 资源（Gfx/Library/Shaders等） | 已由 Orion2-Repacker 直接解压 |
 
 仅供学习研究使用。
