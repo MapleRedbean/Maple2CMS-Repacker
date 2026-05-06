@@ -1,0 +1,9 @@
+﻿################################################################################
+# 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
+################################################################################
+
+/github/filetable_decrypted.bin
+/github/Image.m2h.header
+/github/ms2_image_extract.py
+/github/orion2_keys.json
+/github/README.md
