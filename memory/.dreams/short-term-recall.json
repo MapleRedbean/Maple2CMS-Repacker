@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-06T10:10:30.063Z",
+  "entries": {
+    "memory:memory/2026-04-30.md:30:67": {
+      "key": "memory:memory/2026-04-30.md:30:67",
+      "path": "memory/2026-04-30.md",
+      "startLine": 30,
+      "endLine": 67,
+      "source": "memory",
+      "snippet": "- `Crypto/Stream/PackFileHeaderVer2.cs` - `Crypto/Stream/PackFileHeaderVer3.cs` - `Crypto/CryptoMan.cs` - `Window/MainWindow.cs` - `Window/CreateItem.cs` # 2026-04-30 Daily Memory ## Session: MapleStory2 .m2d/.m2h 格式分析 ### 关键发现 - OS2F/PS2F 格式的 .m2d 文件是 base64 编码的（不是二进制加密） - Image_5055.m2d 解码后仍是 base64，说明没有实际加密/解密发生 - .m2d 文件名有两种格式：纯数字 (Image_5055) 和哈希风格 (Image_495168576362) - 与 MS2F 格式不同，OS2F/PS2F 没有 0xEE/0xFF 魔数标志 - MapleStory2Base.dll 中没有硬编码 XOR 密钥，密钥动态计算 ### 工具 - Orion2-Repacker: 用于解析 .m2h 和 .m2d 文件 - Cheat Engine / x64dbg / Process Hacker: 动态分析工具 - IDA Pro / Ghidra: 反编译工具 ### 文档产出 - `dynamic_analysis_guide.md` - 动态分析快速入门 - `dynamic_analysis_full.md` - 完整动态分析指南 - `find_ms2_process.ps1",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "totalScore": 0.6971952539916435,
+      "maxScore": 0.6971952539916435,
+      "firstRecalledAt": "2026-05-06T10:10:30.063Z",
+      "lastRecalledAt": "2026-05-06T10:10:30.063Z",
+      "queryHashes": [
+        "2fa5fe3ec2bf"
+      ],
+      "recallDays": [
+        "2026-05-06"
+      ],
+      "conceptTags": [
+        "crypto/cryptoman.cs",
+        "window/mainwindow.cs",
+        "window/createitem.cs",
+        "os2f/ps2f",
+        "image-5055.m2d",
+        "说明没有实际加密/解密发生",
+        "image-5055",
+        "image-495168576362"
+      ]
+    },
+    "memory:memory/2026-04-30.md:84:121": {
+      "key": "memory:memory/2026-04-30.md:84:121",
+      "path": "memory/2026-04-30.md",
+      "startLine": 84,
+      "endLine": 121,
+      "source": "memory",
+      "snippet": "7. **CryptoMan.cs** - `DecryptData` 调用 `Decrypt(..., pHeader.IsShiftedLayout)` ### 文件修改清单 - `Crypto/Stream/PackFileHeaderVerBase.cs` - `Crypto/Stream/PackFileHeaderVer1.cs` - `Crypto/Stream/PackFileHeaderVer2.cs` - `Crypto/Stream/PackFileHeaderVer3.cs` - `Crypto/CryptoMan.cs` - `Window/MainWindow.cs` - `Window/CreateItem.cs` ## 2026-04-30 Daily Memory ### Session: MapleStory2 .m2d/.m2h 格式分析 #### 关键发现 - OS2F/PS2F 格式的 .m2d 文件是 base64 编码的（不是二进制加密） - Image_5055.m2d 解码后仍是 base64，说明没有实际加密/解密发生 - .m2d 文件名有两种格式：纯数字 (Image_5055) 和哈希风格 (Image_495168576362) - 与 MS2F 格式不同，OS2F/PS2F 没有 0xEE/0xFF 魔数标志 - MapleStory2Base.dll 中没有硬编码 XOR 密钥，密钥动态计算 #### 工具 - Orion2-Repacker: 用于解析 .m2h 和 .m2d 文件 - Cheat En",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "totalScore": 0.6971952539916435,
+      "maxScore": 0.6971952539916435,
+      "firstRecalledAt": "2026-05-06T10:10:30.063Z",
+      "lastRecalledAt": "2026-05-06T10:10:30.063Z",
+      "queryHashes": [
+        "2fa5fe3ec2bf"
+      ],
+      "recallDays": [
+        "2026-05-06"
+      ],
+      "conceptTags": [
+        "cryptoman.cs",
+        "pheader.isshiftedlayout",
+        "crypto/cryptoman.cs",
+        "window/mainwindow.cs",
+        "window/createitem.cs",
+        "os2f/ps2f",
+        "image-5055.m2d",
+        "说明没有实际加密/解密发生"
+      ]
+    }
+  }
+}
