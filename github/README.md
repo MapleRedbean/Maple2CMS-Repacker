@@ -60,6 +60,33 @@ python ms2_extract_all.py -r Item -d "D:\...\Data" -o ./output
     Movie/           # {csv_path}
 ```
 
+
+## 打包工具
+
+将修改后的文件重新打包为 M2D + M2H 格式：
+
+`ash
+# 打包 OS2F 资源（Image/Map/Item 等）
+python ms2_pack.py -i ./modified_files -r Item -o ./output
+
+# 打包 PS2F 资源（Movie），每个文件独立一个 M2D
+python ms2_pack.py -i ./movie_files -r Movie -o ./output
+
+# 控制 M2D 分卷大小（默认 500MB）
+python ms2_pack.py -i ./files -r Image -o ./output --max-m2d-size 200
+
+# 自定义 M2D 文件名前缀
+python ms2_pack.py -i ./files -r Effect -o ./output --m2d-prefix MyMod_
+`
+
+打包流程：
+`
+OS2F: 原始文件 → zlib 压缩 → AES-CTR 加密 → base64 编码 → 写入 M2D
+PS2F: 原始文件 → XOR 加密 → 写入 M2D
+M2H:  base64( zlib(CSV) || zlib(FT) )
+`
+
+
 ## 解密方案
 
 ### OS2F（7 类资源：Image ~ Textures）
