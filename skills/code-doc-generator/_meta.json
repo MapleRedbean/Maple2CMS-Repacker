@@ -1,0 +1,26 @@
+{
+  "name": "code-doc-generator",
+  "version": "3.0.0",
+  "scene": "代码文档自动生成",
+  "category": "开发工具",
+  "subtitle": "为 Python/JS 代码自动生成专业注释和 API 文档",
+  "target_user": "开发工程师、技术主管、开源项目维护者",
+  "core_need": "自动化代码文档生成",
+  "trigger_words": [
+    "生成文档",
+    "代码注释",
+    "API文档"
+  ],
+  "output_format": "Markdown API 文档 + 带注释代码",
+  "priority": "P2",
+  "tools": [
+    "write_to_file",
+    "read_file"
+  ],
+  "dependencies": [
+    "code-doc"
+  ],
+  "real_objects": "代码文件（read_file）、文档文件（write_to_file）",
+  "deliverables": "API 文档（Markdown）、注释后的代码文件",
+  "need_external_search": "否"
+}
