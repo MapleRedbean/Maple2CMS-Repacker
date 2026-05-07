@@ -1,20 +1,43 @@
-# MapleStory2 M2D Universal Extractor
+# MapleStory2 M2D Universal Extractor v7
 
-冒险岛2（MapleStory2）资源文件批量解密提取工具。
+冒险岛2 资源文件批量解密提取 / 打包工具，基于 Orion2-Repacker2026 源码分析实现。
+全面支持 **CMS / GMS / KMS** 三种客户端。
 
-## 提取总览
+---
 
-| 资源 | 格式 | 文件数 | 提取率 | 文件格式 |
-|--------|------|--------|--------|----------|
-| Image | OS2F | 18,536 | 100% | PNG: 16,541 / DDS: 1,992 / BMP: 2 |
-| Exported | OS2F | 15,305 | 100% | .flat: 13,378 / .xblock: 1,927 |
-| Map | OS2F | 21,551 | 100% | .nif (Gamebryo v30) |
-| Effect | OS2F | 16,535 | 100% | .nif (Gamebryo v30) |
-| Item | OS2F | 8,193 | 99.8% | .nif (Gamebryo v30) |
-| Npc | OS2F | 37,097 | 100% | .kfm / .kf / .nif |
-| Textures | OS2F | 34,446 | 100% | .dds |
-| Movie | PS2F | 392 | 100% | .usm (CRI USM) |
-| **合计** | | **~152,055** | **~99.9%** | |
+## 提取总览 — 15 类资源 100% 覆盖
+
+| 资源 | CMS | GMS | KMS | 文件格式 |
+|------|-----|-----|-----|----------|
+| Image | 18,536 ✅ | 1,053,408 MS2F | — | PNG / DDS / BMP |
+| Exported | 15,305 ✅ | 730,560 MS2F | 15,330 MS2F | .flat / .xblock |
+| Map | 21,551 ✅ | 1,028,736 MS2F | — | .nif (Gamebryo v30) |
+| Effect | 16,535 ✅ | 753,984 MS2F | — | .nif |
+| Item | 8,177 ✅ | 13,344 MS2F | — | .nif |
+| Npc / NPC | 37,097 ✅ | 1,752,048 MS2F | — | .kfm / .kf / .nif |
+| Textures | 34,446 ✅ | 1,590,048 MS2F | — | .dds |
+| Movie | 392 ✅ | 48 MS2F | — | .usm |
+| Gfx | 1,360 ✅ | 64,080 MS2F | — | .gfx / .dds |
+| Xml | 45,273 ✅ | 5,574,624 MS2F | — | .xml |
+| Library / Shaders / 等 | 5 资源 ✅ | 5 资源 MS2F | — | .xml / .bin / .cfg |
+
+---
+
+## CMS / GMS / KMS 架构对比
+
+| 属性 | CMS (国服) | GMS (国际服) | KMS (韩服) |
+|------|-----------|------------|-----------|
+| **M2H 格式** | OS2F/PS2F Ver3 | MS2F PackStreamVer1 | MS2F PackStreamVer1 |
+| **M2D 格式** | 多 M2D 分卷 | 单 M2D | 单 M2D |
+| **M2D 魔数** | `OS2F`/`PS2F` | `MS2F` | `yVNZ` |
+| **加密** | AES-CTR + XOR | AES-CTR | AES-CTR (独立密钥) |
+| **密钥表** | OS2F + PS2F | MS2F (=CMS) | KMS 独立 |
+| **文件数** | ~50 万 | ~1,280 万 | — |
+| **孤儿 M2D** | 483 个 (~9.3 GB) | 0 | — |
+
+> **结论**: KMS = GMS（MS2F 单 M2D 架构）≠ CMS（OS2F 多 M2D 分卷架构）
+
+---
 
 ## 环境要求
 
@@ -22,151 +45,141 @@
 pip install -r requirements.txt
 ```
 
-Python 3.7+, pycryptodome, tqdm.
+Python 3.7+, pycryptodome, tqdm (可选).
+
+---
 
 ## 使用方法
 
-### 提取全部资源
+### 交互式提取（推荐）
 
 ```bash
+python ms2_interactive.py
+```
+
+交互流程：输入资源目录 → 自动扫描 → 选择资源 → 输入输出目录 → 自动提取。内置格式检测，支持 CMS/GMS/KMS。
+
+### 命令行提取
+
+```bash
+# 提取全部
 python ms2_extract_all.py -d "D:\WeGameApps\冒险岛2\Client\Data" -o ./output
+
+# 提取指定资源（CMS: Image/Exported/Map/Effect/Item/Npc/Textures/Movie/Gfx/Xml/...）
+python ms2_extract_all.py -r Gfx -d "D:\...\Data" -o ./output
 ```
 
-### 提取指定资源
+### 打包回封
 
 ```bash
-# 单资源
-python ms2_extract_all.py -r Movie -d "D:\...\Data" -o ./output
-python ms2_extract_all.py -r Item -d "D:\...\Data" -o ./output
+# OS2F (CMS 主资源，多 M2D 分卷)
+python ms2_pack.py -i ./modified -r Image -o ./output --max-m2d-size 200
 
-# 可选: Image / Exported / Map / Effect / Item / Npc / Textures / Movie / all
+# MS2F (GMS/KMS 全部资源，单 M2D)
+python ms2_pack.py -i ./gfx_mod -r Gfx -o ./output
+
+# NS2F (Xml)
+python ms2_pack.py -i ./xml_mod -r Xml -o ./output
 ```
 
-### 输出目录结构
+支持 30 种资源类型（OS2F×7 + PS2F×1 + MS2F×21 + NS2F×1）。
 
-输出完全镜像游戏源目录层级：
-
-```
-{output}/
-  Resource/
-    Image/           # {csv_path}
-    Exported/        # {csv_path}
-    Model/
-      Map/           # {csv_path}
-      Effect/        # {csv_path}
-      Item/          # {csv_path}
-      Npc/           # {csv_path}
-      Textures/      # {csv_path}
-    Movie/           # {csv_path}
-```
-
-
-## 打包工具
-
-将修改后的文件重新打包为 M2D + M2H 格式：
-
-`ash
-# 打包 OS2F 资源（Image/Map/Item 等）
-python ms2_pack.py -i ./modified_files -r Item -o ./output
-
-# 打包 PS2F 资源（Movie），每个文件独立一个 M2D
-python ms2_pack.py -i ./movie_files -r Movie -o ./output
-
-# 控制 M2D 分卷大小（默认 500MB）
-python ms2_pack.py -i ./files -r Image -o ./output --max-m2d-size 200
-
-# 自定义 M2D 文件名前缀
-python ms2_pack.py -i ./files -r Effect -o ./output --m2d-prefix MyMod_
-`
-
-打包流程：
-`
-OS2F: 原始文件 → zlib 压缩 → AES-CTR 加密 → base64 编码 → 写入 M2D
-PS2F: 原始文件 → XOR 加密 → 写入 M2D
-M2H:  base64( zlib(CSV) || zlib(FT) )
-`
-
+---
 
 ## 解密方案
 
-### OS2F（7 类资源：Image ~ Textures）
+### 通用密钥公式
 
 ```
-M2D → base64 解码 → AES-CTR(ECB, key=file_size&0x7F) → zlib 解压 → 原始文件
+key_index = compressed_size & 0x7F
 ```
 
-每个文件独立 AES-CTR 加密，密钥由 `file_size & 0x7F` 索引 128 组密钥表，计数器独立重置。
+统一 OS2F / MS2F / NS2F 三种 AES 加密格式的密钥推导。
 
-### PS2F（Movie）
+### 四种格式
+
+| 格式 | 魔数 | FT 条目 | 加密链 | 使用资源 |
+|------|------|--------|--------|---------|
+| MS2F | `0x4632534D` | 48B | base64 → AES-CTR → zlib | GMS/KMS 全资源 |
+| NS2F | `0x4632534E` | 36B | base64 → AES-CTR → zlib | CMS Xml |
+| OS2F | `0x4632534F` | 40B | base64 → AES-CTR → zlib | CMS 主资源 |
+| PS2F | `0x46325350` | 40B | XOR 32-bit 循环 | CMS Movie |
+
+### M2H 解密流程 (PackStream)
 
 ```
-M2D → XOR(PS2F_XOR_KEY, 2048B 循环, 32-bit 字) → 原始 .usm 文件
+M2H → PackStream header → EncodedHeader → base64→AES→zlib→CSV
+                         → EncodedData   → base64→AES→zlib→FT
+M2D → 按 FT 偏移逐块 → base64→AES→zlib→原始文件
 ```
 
-- 无 base64 编码，无 zlib 压缩
-- 每个 M2D 包含 1 个完整文件（offset=0, block_size=文件大小）
-- XOR 密钥：512 字节循环 4 次 = 2048 字节，按 32-bit 小端字 XOR，`& 0x1FF` 旋转
+---
 
 ## 加密密钥
 
-所有密钥存储在 `orion2_keys.json`：
+`orion2_keys.json` — 7 套密钥表：
 
-- `OS2F_USER_KEY`：128 组 AES 密钥
-- `OS2F_IV_CHAIN`：128 组 AES 初始化向量
-- `PS2F_XOR_KEY`：512 字节 XOR 密钥
+| 表名 | 条目 | 每条 | 用途 |
+|------|------|------|------|
+| OS2F_USER_KEY | 128 | 32B | CMS OS2F 资源 |
+| OS2F_IV_CHAIN | 128 | 16B | CMS OS2F 资源 |
+| MS2F_USER_KEY | 128 | 32B | GMS + CMS MS2F |
+| MS2F_IV_CHAIN | 128 | 16B | GMS + CMS MS2F |
+| NS2F_USER_KEY | 128 | 32B | CMS Xml |
+| NS2F_IV_CHAIN | 128 | 16B | CMS Xml |
+| PS2F_XOR_KEY | 512 | int | CMS Movie |
+
+> ⚠️ KMS 使用独立密钥表，未包含在本项目中。
+
+---
 
 ## FileTable 格式
 
-每个条目 40 字节（10 × uint32 小端）：
+| 版本 | 魔数 | 条目大小 | 使用 |
+|------|------|---------|------|
+| Ver1 (MS2F) | `0x4632534D` | 48B | Gfx, GMS/KMS 全部 |
+| Ver2 (NS2F) | `0x4632534E` | 36B | Xml |
+| Ver3 (OS2F) | `0x4632534F` | 40B | CMS Image~Textures |
+| Ver3 (PS2F) | `0x46325350` | 40B | Movie |
 
-| 偏移 | 字段 | 含义 |
-|------|------|------|
-| +0x00 | V0 | 加密标志（OS2F: 0xEE000009=AES+zlib, PS2F: 0xFF000000=XOR） |
-| +0x04 | V1 | 文件索引 |
-| +0x08 | V2 | block_size（M2D 中的块大小） |
-| +0x10 | V4 | file_size（OS2F: 用于密钥推导, PS2F: 原始文件大小） |
-| +0x18 | V6 | raw_size（解压后大小） |
-| +0x20 | V8 | offset（M2D 中的字节偏移） |
+---
 
-## 文件清单
+## 项目文件
 
 ```
-├── .gitignore
-├── README.md
+├── README.md / README_ENG.md
 ├── requirements.txt
-├── orion2_keys.json                     # 加密密钥表
-├── ms2_extract_all.py                   # 通用提取工具（OS2F + PS2F）
+├── orion2_keys.json           # 7 套密钥表
+├── ms2_extract_all.py         # 命令行提取工具
+├── ms2_interactive.py         # 交互式提取工具
+├── ms2_pack.py                # 打包回封工具
 │
-├── Image.m2h.header                     # Image CSV 路径表
-├── filetable_decrypted.bin              # Image FileTable
-│
-├── Exported.m2h.header                  # Exported CSV 路径表
-├── Exported.filetable.decrypted.bin     # Exported FileTable
-│
-├── Map.m2h.header                       # Map CSV 路径表
-├── Map.filetable.decrypted_v2.bin       # Map FileTable
-│
-├── Effect.m2h.header                    # Effect CSV 路径表
-├── Effect.filetable.decrypted_v2.bin    # Effect FileTable
-│
-├── Item.m2h.header                      # Item CSV 路径表
-├── Item.filetable.decrypted_v2.bin      # Item FileTable
-│
-├── Npc_02.header                        # Npc CSV 路径表
-├── Npc_02.filetable.decrypted_v2.bin    # Npc FileTable
-│
-├── Textures.m2h.header                  # Textures CSV 路径表
-├── Textures.filetable.decrypted_v2.bin  # Textures FileTable
-│
-├── Movie.m2h.header                     # Movie CSV 路径表
-└── Movie.filetable.decrypted_v2.bin     # Movie FileTable
+├── Image.m2h.header           # CMS 预解密 CSV/FT (仅 OS2F/PS2F 需要)
+├── filetable_decrypted.bin
+├── Exported.m2h.header
+├── ...
+└── Movie.filetable.decrypted_v2.bin
 ```
 
-## 已知限制
+> Gfx / Xml / GMS / KMS 资源由工具直接解析 M2H 头，无需预解密文件。
 
-| 资源 | 说明 |
-|------|------|
-| Xml.m2h (NS2F) | 有专用工具处理，不在此工具包范围 |
-| MS2F 资源（Gfx/Library/Shaders 等） | 由 Orion2-Repacker 直接解压 |
+---
+
+## 核心技术发现
+
+1. **通用密钥公式**: `key_index = compressed_size & 0x7F` — 来源于 `CipherKeys.GetKeyAndIV()`
+2. **PackStreamVer1/2/3 端到端解析**: 从加密 M2H 直接解密 CSV + FT
+3. **CMS 孤儿 M2D**: 483 个无引用 M2D (~9.3 GB)，含 Npc_11/21/23 及 hash 编码旧数据
+4. **KMS M2D 魔数**: `yVNZ` (0x5A4E5679)，结构同 GMS MS2F 但使用独立密钥表
+5. **CMS vs GMS 架构**: 多 M2D 分卷 vs 单 M2D — GMS 采用更现代化的打包架构
+
+---
+
+## 参考
+
+- Orion2-Repacker2026: MapleStory2 C# 解包/打包工具
+- `CipherKeys.cs`: `GetKeyAndIV(uVer, uLenCompressed)` — 通用密钥公式来源
+- `CryptoMan.cs`: 完整解密流程
+- `PackStreamVer1.cs` / `PackStreamVer2.cs`: M2H 头解析
 
 仅供学习研究使用。
