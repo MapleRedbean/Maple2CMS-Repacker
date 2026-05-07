@@ -19,7 +19,7 @@
 | Movie | 392 ✅ | 48 MS2F | — | .usm |
 | Gfx | 1,360 ✅ | 64,080 MS2F | — | .gfx / .dds |
 | Xml | 45,273 ✅ | 5,574,624 MS2F | — | .xml |
-| Library / Shaders / 等 | 5 资源 ✅ | 5 资源 MS2F | — | .xml / .bin / .cfg |
+| Library / Shaders / 等 | 2,340 (5 资源) ✅ | 5 资源 MS2F | — | .fxo / .xml / .nt / .ini / .bin |
 
 ---
 

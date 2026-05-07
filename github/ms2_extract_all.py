@@ -363,6 +363,12 @@ def extract_ps2f(name, cfg, data_dir, output_dir, psk_xor):
 PACKSTREAM_RESOURCES = {
     'Gfx': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
     'Xml': {'magic': NS2F_MAGIC, 'subdir': '', 'ver': 2, 'data_root': True},
+    # Previously misclassified as single-file; all are multi-file PackStreamVer1
+    'Shaders': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
+    'asset-web-config': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
+    'asset-web-metadata': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
+    'Library': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
+    'PrecomputedTerrain': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
 }
 
 def extract_packstream(name, cfg, data_dir, output_dir, osk, oiv, msk, miv, nsk, niv):
@@ -498,11 +504,7 @@ def extract_packstream(name, cfg, data_dir, output_dir, osk, oiv, msk, miv, nsk,
 # ══════════════════════════════════════════════════════════════════════════
 
 MS2F_SINGLE = {
-    'asset-web-config':    {'magic': MS2F_MAGIC, 'ext': '.cfg',  'subdir': ''},
-    'asset-web-metadata':  {'magic': MS2F_MAGIC, 'ext': '.xml',  'subdir': ''},
-    'Library':             {'magic': MS2F_MAGIC, 'ext': '.xml',  'subdir': ''},
-    'Shaders':             {'magic': MS2F_MAGIC, 'ext': '.bin',  'subdir': ''},
-    'PrecomputedTerrain':  {'magic': MS2F_MAGIC, 'ext': '.bin',  'subdir': ''},
+    # All moved to PACKSTREAM_RESOURCES (multi-file PackStreamVer1)
 }
 
 def extract_ms2f_single(name, cfg, data_dir, output_dir, msk, miv):

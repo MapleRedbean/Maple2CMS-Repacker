@@ -20,7 +20,7 @@ Full support for **CMS / GMS / KMS** clients.
 | Movie | 392 | 48 | — | .usm (CRI USM) |
 | Gfx | 1,360 | 64,080 | — | .gfx / .dds |
 | Xml | 45,273 | 5,574,624 | — | .xml |
-| Library / Shaders / etc. | 5 resources | 5 resources | — | .xml / .bin / .cfg |
+| Library / Shaders / etc. | 2,340 (5 resources) | 5 resources | — | .fxo / .xml / .nt / .ini / .bin |
 
 ---
 

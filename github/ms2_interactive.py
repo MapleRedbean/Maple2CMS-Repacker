@@ -780,13 +780,9 @@ def main():
                 ok_n, bad_n = extract_ps2f_resource(r, keys, data_dir, output_dir)
                 grand_ok += ok_n
                 grand_bad += bad_n
-            elif fmt == 'MS2F':
-                if r['m2d_count'] == 1 and r.get('total_m2d_size', 0) < 100 * 1024 * 1024:
-                    # Small single M2D → single-file resource (Library, Shaders, etc.)
-                    ok_n, bad_n = extract_ms2f_single_resource(r, keys, data_dir, output_dir)
-                else:
-                    # Multi-file PackStream → parse M2H directly (Gfx)
-                    ok_n, bad_n = extract_packstream_resource(r, keys, data_dir, output_dir)
+            elif fmt == "MS2F":
+                # All MS2F resources are PackStreamVer1 multi-file; parse M2H directly
+                ok_n, bad_n = extract_packstream_resource(r, keys, data_dir, output_dir)
                 grand_ok += ok_n
                 grand_bad += bad_n
             elif fmt == 'NS2F':
