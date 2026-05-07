@@ -19,7 +19,7 @@
 | Movie | 392 ✅ | 48 MS2F | — | .usm |
 | Gfx | 1,360 ✅ | 64,080 MS2F | — | .gfx / .dds |
 | Xml | 45,273 ✅ | 5,574,624 MS2F | — | .xml |
-| Library / Shaders / 等 | 2,340 (5 资源) ✅ | 5 资源 MS2F | — | .fxo / .xml / .nt / .ini / .bin |
+| Library / Shaders / etc. | 2,340 (5 resources) ✅ | 5 resources MS2F | — | .fxo / .xml / .nt / .ini / .bin |
 
 ---
 
@@ -36,6 +36,18 @@
 | **孤儿 M2D** | 483 个 (~9.3 GB) | 0 | — |
 
 > **结论**: KMS = GMS（MS2F 单 M2D 架构）≠ CMS（OS2F 多 M2D 分卷架构）
+
+---
+
+## 资源目录映射 (CMS)
+
+| 资源 | Data 子目录 |
+|------|------------|
+| Xml | `Data/` |
+| Precompiled | `Data/lua/` |
+| Image, Exported, Movie, Gfx, Shaders, Library, asset-web-*, Camera, Character, Common | `Data/Resource/` |
+| Map, Effect, Item, Npc, Textures, Tool, Path | `Data/Resource/Model/` |
+| PrecomputedTerrain | `Data/Resource/` |
 
 ---
 
@@ -69,7 +81,22 @@ python ms2_extract_all.py -d "D:\WeGameApps\冒险岛2\Client\Data" -o ./output
 python ms2_extract_all.py -r Gfx -d "D:\...\Data" -o ./output
 ```
 
-### 打包回封
+### 交互式打包（推荐）
+
+```bash
+python ms2_interactive_pack.py
+```
+
+交互流程：输入解包目录 → 自动扫描资源 → 选择资源 → 选择输出格式 → 指定 Data 目录 → 自动打包。
+
+**格式选择**（Step 3.5）：
+- `[1] MS2F` — 单 M2D（推荐，兼容 GMS/Orion2-Repacker）
+- `[2] OS2F` — 多 M2D 分卷（经典 CMS）
+- `[3] Auto` — 保持原始格式
+
+支持 CMS OS2F → MS2F 跨格式转换。Movie 子资源（common / emotion / item）可独立打包为 MS2F。
+
+### 命令行打包
 
 ```bash
 # OS2F (CMS 主资源，多 M2D 分卷)
@@ -82,7 +109,7 @@ python ms2_pack.py -i ./gfx_mod -r Gfx -o ./output
 python ms2_pack.py -i ./xml_mod -r Xml -o ./output
 ```
 
-支持 30 种资源类型（OS2F×7 + PS2F×1 + MS2F×21 + NS2F×1）。
+支持 33 种资源类型（OS2F×7 + PS2F×1 + MS2F×24 + NS2F×1）。
 
 ---
 
@@ -95,6 +122,10 @@ key_index = compressed_size & 0x7F
 ```
 
 统一 OS2F / MS2F / NS2F 三种 AES 加密格式的密钥推导。
+
+### AES-CTR 实现
+
+与 Orion2 `AESCipher.cs` 完全一致：16 字节计数器 = IV 链条目，AES-ECB 加密计数器产生密钥流，计数器大端 128 位递增。
 
 ### 四种格式
 
@@ -112,6 +143,40 @@ M2H → PackStream header → EncodedHeader → base64→AES→zlib→CSV
                          → EncodedData   → base64→AES→zlib→FT
 M2D → 按 FT 偏移逐块 → base64→AES→zlib→原始文件
 ```
+
+---
+
+## M2H 头部布局
+
+### PackStreamVer1 (MS2F, 64B)
+```
+magic(4) + uReserved(4) + CompressedDataSize(8) + EncodedDataSize(8) +
+HeaderSize(8) + CompressedHeaderSize(8) + EncodedHeaderSize(8) +
+FileListCount(8) + DataSize(8)
+```
+
+### PackStreamVer2 (NS2F, 56B)
+```
+magic(4) + FileListCount(4) + CompressedDataSize(8) + EncodedDataSize(8) +
+HeaderSize(8) + CompressedHeaderSize(8) + EncodedHeaderSize(8) + DataSize(8)
+```
+
+### PackStreamVer3 (OS2F/PS2F, 60B)
+```
+magic(4) + FileListCount(4) + Reserved(4) + CompressedDataSize(8) +
+EncodedDataSize(8) + CompressedHeaderSize(8) + EncodedHeaderSize(8) +
+DataSize(8) + HeaderSize(8)
+```
+
+---
+
+## FileTable 条目布局
+
+| 版本 | 条目大小 | 字段布局 |
+|------|---------|---------|
+| Ver1 (MS2F) | 48B | PackingDef(4)+FileIndex(4)+BufferFlag(4)+Reserved(4)+Offset(8)+EncodedSize(4)+Reserved(4)+CompressedSize(8)+FileSize(8) |
+| Ver2 (NS2F) | 36B | BufferFlag(4)+FileIndex(4)+EncodedSize(4)+CompressedSize(8)+FileSize(8)+Offset(8) |
+| Ver3 (OS2F/PS2F) | 40B | BufferFlag(4)+FileIndex(4)+EncodedSize(4)+Reserved(4)+CompressedSize(8)+FileSize(8)+Offset(8) |
 
 ---
 
@@ -133,28 +198,18 @@ M2D → 按 FT 偏移逐块 → base64→AES→zlib→原始文件
 
 ---
 
-## FileTable 格式
-
-| 版本 | 魔数 | 条目大小 | 使用 |
-|------|------|---------|------|
-| Ver1 (MS2F) | `0x4632534D` | 48B | Gfx, GMS/KMS 全部 |
-| Ver2 (NS2F) | `0x4632534E` | 36B | Xml |
-| Ver3 (OS2F) | `0x4632534F` | 40B | CMS Image~Textures |
-| Ver3 (PS2F) | `0x46325350` | 40B | Movie |
-
----
-
 ## 项目文件
 
 ```
 ├── README.md / README_ENG.md
 ├── requirements.txt
-├── orion2_keys.json           # 7 套密钥表
-├── ms2_extract_all.py         # 命令行提取工具
-├── ms2_interactive.py         # 交互式提取工具
-├── ms2_pack.py                # 打包回封工具
+├── orion2_keys.json              # 7 套密钥表
+├── ms2_extract_all.py            # 命令行提取工具
+├── ms2_interactive.py            # 交互式提取工具
+├── ms2_pack.py                   # 命令行打包工具
+├── ms2_interactive_pack.py       # 交互式打包工具（推荐）
 │
-├── Image.m2h.header           # CMS 预解密 CSV/FT (仅 OS2F/PS2F 需要)
+├── Image.m2h.header              # CMS 预解密 CSV/FT (仅 OS2F/PS2F 需要)
 ├── filetable_decrypted.bin
 ├── Exported.m2h.header
 ├── ...
@@ -168,10 +223,11 @@ M2D → 按 FT 偏移逐块 → base64→AES→zlib→原始文件
 ## 核心技术发现
 
 1. **通用密钥公式**: `key_index = compressed_size & 0x7F` — 来源于 `CipherKeys.GetKeyAndIV()`
-2. **PackStreamVer1/2/3 端到端解析**: 从加密 M2H 直接解密 CSV + FT
-3. **CMS 孤儿 M2D**: 483 个无引用 M2D (~9.3 GB)，含 Npc_11/21/23 及 hash 编码旧数据
-4. **KMS M2D 魔数**: `yVNZ` (0x5A4E5679)，结构同 GMS MS2F 但使用独立密钥表
-5. **CMS vs GMS 架构**: 多 M2D 分卷 vs 单 M2D — GMS 采用更现代化的打包架构
+2. **AES-CTR 实现**: 16 字节 IV 计数器 + AES-ECB，与 Orion2 `AESCipher.cs` 字节级一致，确保打包文件可被 Orion2-Repacker 读取
+3. **PackStreamVer1/2/3 端到端解析与重打包**: 四种格式完整支持 M2H 头部构造 + CSV/FT 加密 + 文件数据加密
+4. **CMS → MS2F 跨格式转换**: OS2F/PS2F 资源可转为 GMS 风格单 M2D，兼容 Orion2-Repacker
+5. **CMS 孤儿 M2D**: 483 个无引用 M2D (~9.3 GB)，含 Npc_11/21/23 及 hash 编码旧数据
+6. **KMS M2D 魔数**: `yVNZ` (0x5A4E5679)，结构同 GMS MS2F 但使用独立密钥表
 
 ---
 
@@ -179,7 +235,9 @@ M2D → 按 FT 偏移逐块 → base64→AES→zlib→原始文件
 
 - Orion2-Repacker2026: MapleStory2 C# 解包/打包工具
 - `CipherKeys.cs`: `GetKeyAndIV(uVer, uLenCompressed)` — 通用密钥公式来源
-- `CryptoMan.cs`: 完整解密流程
-- `PackStreamVer1.cs` / `PackStreamVer2.cs`: M2H 头解析
+- `AESCipher.cs`: AES-CTR 实现参考
+- `CryptoMan.cs`: 完整加密/解密流程
+- `PackStreamVer1.cs` / `PackStreamVer2.cs` / `PackStreamVer3.cs`: M2H 头解析
+- `PackFileHeaderVer1.cs` / `PackFileHeaderVer2.cs` / `PackFileHeaderVer3.cs`: FT 条目布局
 
 仅供学习研究使用。

@@ -99,6 +99,9 @@ MS2F_STREAM_RESOURCES = {
     'Item':     {'prefix': 'Item',      'magic': MS2F_MAGIC, 'target': 'Resource/Model'},
     'Textures': {'prefix': 'Textures',  'magic': MS2F_MAGIC, 'target': 'Resource/Model'},
     'Movie':    {'prefix': 'Movie',     'magic': MS2F_MAGIC, 'target': 'Resource'},
+    'common':   {'prefix': 'common',    'magic': MS2F_MAGIC, 'target': 'Resource'},
+    'emotion':  {'prefix': 'emotion',   'magic': MS2F_MAGIC, 'target': 'Resource'},
+    'item':     {'prefix': 'item',      'magic': MS2F_MAGIC, 'target': 'Resource'},
 }
 
 NS2F_RESOURCES = {
