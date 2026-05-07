@@ -100,7 +100,7 @@ MS2F_STREAM_RESOURCES = {
     'Library':  {'prefix': 'Library',   'magic': MS2F_MAGIC},
     'Path':     {'prefix': 'Path',      'magic': MS2F_MAGIC},
     'Precompiled':{'prefix': 'Precompiled','magic': MS2F_MAGIC},
-    'PrecomputedTerrain':{'prefix':'PrecomputedTerrain','magic':MS2F_MAGIC},
+    'PrecomputedTerrain':{'prefix':'PrecomputedTerrain','magic':MS2F_MAGIC,'subdir':'lua'},
     'Shaders':  {'prefix': 'Shaders',   'magic': MS2F_MAGIC},
     'Tool':     {'prefix': 'Tool',      'magic': MS2F_MAGIC},
     'NPC':      {'prefix': 'NPC',       'magic': MS2F_MAGIC},

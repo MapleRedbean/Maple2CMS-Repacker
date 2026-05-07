@@ -305,14 +305,15 @@ def extract_os2f_resource(r, keys, data_dir, output_dir):
     """
     name = r['name']
     osk, oiv = keys['osk'], keys['oiv']
-    prefix = name + '_'
+    # For Npc_02 etc, use 'Npc_' prefix (files are Npc_XX.m2d, not Npc_02_XX.m2d)
+    prefix = 'Npc_' if name.startswith('Npc_') else (name + '_')
 
     # Find pre-decrypted files
     csv_file = f"{name}.m2h.header"
     ft_file = f"{name}.filetable.decrypted_v2.bin"
 
-    # Handle Npc special naming
-    if name == 'Npc':
+    # Handle Npc_02 naming (M2H prefix may be Npc_02, config key is Npc)
+    if name == 'Npc' or name.startswith('Npc_'):
         csv_file = 'Npc_02.header'
         ft_file = 'Npc_02.filetable.decrypted_v2.bin'
 
@@ -371,7 +372,7 @@ def extract_os2f_resource(r, keys, data_dir, output_dir):
             continue
         with open(fpath, 'rb') as f:
             m2d = f.read()
-        ok = 0
+        ok_count = 0
         for idx, rel_path, entry in files:
             off, size = entry['offset'], entry['block_size']
             if off + size > len(m2d):
@@ -404,9 +405,9 @@ def extract_os2f_resource(r, keys, data_dir, output_dir):
             os.makedirs(os.path.dirname(op), exist_ok=True)
             with open(op, 'wb') as f:
                 f.write(dec)
-            ok += 1
-        ok_total += ok
-        bad_total += len(files) - ok
+            ok_count += 1
+        ok_total += ok_count
+        bad_total += len(files) - ok_count
 
     total = ok_total + bad_total
     pc = ok_total * 100 // total if total else 0
@@ -493,7 +494,7 @@ def extract_ps2f_resource(r, keys, data_dir, output_dir):
         if not os.path.exists(fpath):
             bad_total += len(files)
             continue
-        ok = 0
+        ok_count = 0
         for idx, rel_path, entry in files:
             off, size, flag = entry['offset'], entry['block_size'], entry['flag']
             if flag not in (XOR, XOR_ZLIB):
@@ -517,9 +518,9 @@ def extract_ps2f_resource(r, keys, data_dir, output_dir):
             os.makedirs(os.path.dirname(op), exist_ok=True)
             with open(op, 'wb') as f:
                 f.write(dec)
-            ok += 1
-        ok_total += ok
-        bad_total += len(files) - ok
+            ok_count += 1
+        ok_total += ok_count
+        bad_total += len(files) - ok_count
 
     total = ok_total + bad_total
     pc = ok_total * 100 // total if total else 0
@@ -612,11 +613,12 @@ def extract_packstream_resource(r, keys, data_dir, output_dir):
 
     info(f"FT: compressed={hdr['CompressedDataSize']} key={ft_ki} raw={len(ft_raw)}B {len(ft_entries)} entries")
 
-    # Determine output directory
+    # Determine output directory (preserve subdirectory structure)
+    rel_root = os.path.relpath(r['root'], data_dir)
     if r['data_root']:
-        out_dir = os.path.join(output_dir, 'Data', name)
+        # Resources outside Resource/ (e.g. lua/Precompiled, Data/Xml)
+        out_dir = os.path.join(output_dir, rel_root, name) if rel_root != '.' else os.path.join(output_dir, 'Data', name)
     else:
-        rel_root = os.path.relpath(r['root'], data_dir)
         out_dir = os.path.join(output_dir, rel_root, name) if rel_root != '.' else os.path.join(output_dir, 'Resource', name)
     os.makedirs(out_dir, exist_ok=True)
 

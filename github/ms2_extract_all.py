@@ -368,7 +368,7 @@ PACKSTREAM_RESOURCES = {
     'asset-web-config': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
     'asset-web-metadata': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
     'Library': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
-    'PrecomputedTerrain': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
+    'PrecomputedTerrain': {'magic': MS2F_MAGIC, 'subdir': 'lua', 'ver': 1},
 }
 
 def extract_packstream(name, cfg, data_dir, output_dir, osk, oiv, msk, miv, nsk, niv):
@@ -444,7 +444,7 @@ def extract_packstream(name, cfg, data_dir, output_dir, osk, oiv, msk, miv, nsk,
     # Memory-map M2D
     m2d_size = os.path.getsize(m2d_path)
     if cfg.get('data_root'):
-        out_dir = os.path.join(output_dir, 'Data', name)
+        out_dir = os.path.join(output_dir, 'Data', cfg['subdir'], name) if cfg['subdir'] else os.path.join(output_dir, 'Data', name)
     else:
         out_dir = os.path.join(output_dir, 'Resource', cfg['subdir'], name) if cfg['subdir'] else os.path.join(output_dir, 'Resource', name)
     os.makedirs(out_dir, exist_ok=True)
