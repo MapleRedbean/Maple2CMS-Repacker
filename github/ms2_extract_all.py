@@ -368,7 +368,7 @@ PACKSTREAM_RESOURCES = {
     'asset-web-config': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
     'asset-web-metadata': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
     'Library': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
-    'PrecomputedTerrain': {'magic': MS2F_MAGIC, 'subdir': 'lua', 'ver': 1},
+    'PrecomputedTerrain': {'magic': MS2F_MAGIC, 'subdir': '', 'ver': 1},
 }
 
 def extract_packstream(name, cfg, data_dir, output_dir, osk, oiv, msk, miv, nsk, niv):

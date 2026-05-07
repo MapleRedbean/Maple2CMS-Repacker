@@ -81,16 +81,16 @@ MS2F_STREAM_RESOURCES = {
     'Gfx':      {'prefix': 'Gfx',       'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Shaders':  {'prefix': 'Shaders',   'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Library':  {'prefix': 'Library',   'magic': MS2F_MAGIC, 'target': 'Resource'},
-    'PrecomputedTerrain': {'prefix': 'PrecomputedTerrain', 'magic': MS2F_MAGIC, 'target': 'lua'},
+    'PrecomputedTerrain': {'prefix': 'PrecomputedTerrain', 'magic': MS2F_MAGIC, 'target': 'Resource'},
     'asset-web-config':   {'prefix': 'asset-web-config',   'magic': MS2F_MAGIC, 'target': 'Resource'},
     'asset-web-metadata': {'prefix': 'asset-web-metadata', 'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Camera':   {'prefix': 'Camera',    'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Character':{'prefix': 'Character', 'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Common':   {'prefix': 'Common',    'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Emotion':  {'prefix': 'Emotion',   'magic': MS2F_MAGIC, 'target': 'Resource'},
-    'Path':     {'prefix': 'Path',      'magic': MS2F_MAGIC, 'target': 'Resource'},
-    'Precompiled':{'prefix': 'Precompiled','magic': MS2F_MAGIC, 'target': 'Resource'},
-    'Tool':     {'prefix': 'Tool',      'magic': MS2F_MAGIC, 'target': 'Resource'},
+    'Path':     {'prefix': 'Path',      'magic': MS2F_MAGIC, 'target': 'Resource/Model'},
+    'Precompiled':{'prefix': 'Precompiled','magic': MS2F_MAGIC, 'target': 'lua'},
+    'Tool':     {'prefix': 'Tool',      'magic': MS2F_MAGIC, 'target': 'Resource/Model'},
     'Npc':      {'prefix': 'Npc',       'magic': MS2F_MAGIC, 'target': 'Resource/Model'},
     'Image':    {'prefix': 'Image',     'magic': MS2F_MAGIC, 'target': 'Resource'},
     'Exported': {'prefix': 'Exported',  'magic': MS2F_MAGIC, 'target': 'Resource'},
@@ -592,9 +592,13 @@ def main():
 
     # Format selection: MS2F (single M2D) as default
     # Resources that support multiple formats
-    convertible = [r for r in selected if r['name'] in OS2F_TO_MS2F]
+    convertible = []
+    for r in selected:
+        resolved = RESOURCE_ALIASES.get(r['name'], r['name'])
+        if resolved in OS2F_TO_MS2F:
+            convertible.append((r, resolved))
     if convertible:
-        names = ', '.join(r['name'] for r in convertible)
+        names = ', '.join(r[0]['name'] for r in convertible)
         print(f"\n{C.W}─ Step 3.5: Pack Format{C.X}")
         print(f"  Applicable to: {C.Y}{names}{C.X}")
         print(f"  {C.B}[1] MS2F{C.X} (single M2D, compact — RECOMMENDED)")
@@ -602,15 +606,15 @@ def main():
         print(f"  {C.B}[3] Per-resource auto{C.X} (keep original format)")
         choice = prompt("Format", "1")
         if choice == '2':
-            for r in convertible:
-                if r['format'] in ('MS2F', 'PS2F') and r['name'] in OS2F_RESOURCES:
+            for r, resolved in convertible:
+                if r['format'] in ('MS2F', 'PS2F') and resolved in OS2F_RESOURCES:
                     r['format'] = 'OS2F'
-                    r['cfg'] = OS2F_RESOURCES[r['name']]
+                    r['cfg'] = OS2F_RESOURCES[resolved]
                     info(f"  {r['name']}: -> OS2F")
         elif choice == '1':
-            for r in convertible:
+            for r, resolved in convertible:
                 r['format'] = 'MS2F'
-                r['cfg'] = MS2F_STREAM_RESOURCES[r['name']]
+                r['cfg'] = MS2F_STREAM_RESOURCES[resolved]
                 info(f"  {r['name']}: -> MS2F")
         # choice 3 = keep auto-detected format
 
