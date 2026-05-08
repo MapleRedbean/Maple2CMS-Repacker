@@ -1,4 +1,4 @@
-# MapleStory2 M2D Universal Extractor v7
+# MapleStory2 M2D Universal Extractor v7 testing
 
 冒险岛2 资源文件批量解密提取 / 打包工具，基于 Orion2-Repacker2026 源码分析实现。
 全面支持 **CMS / GMS / KMS** 三种客户端。
