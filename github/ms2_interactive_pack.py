@@ -61,7 +61,7 @@ AES_ZLIB = 0xEE000009
 # ── Resource Config ───────────────────────────────────────────────────
 
 # Resources that can be packed as either OS2F (multi-M2D) or MS2F (single M2D)
-OS2F_TO_MS2F = {'Image', 'Exported', 'Map', 'Effect', 'Item', 'Npc', 'Textures', 'Movie'}
+CONVERTIBLE_TO_MS2F = {'Image', 'Exported', 'Map', 'Effect', 'Item', 'Npc', 'Textures', 'Movie', 'Xml'}
 
 OS2F_RESOURCES = {
     'Image':    {'prefix': 'Image_',    'csv_name': 'Image.m2h',    'target': 'Resource'},
@@ -102,6 +102,7 @@ MS2F_STREAM_RESOURCES = {
     'common':   {'prefix': 'common',    'magic': MS2F_MAGIC, 'target': 'Resource'},
     'emotion':  {'prefix': 'emotion',   'magic': MS2F_MAGIC, 'target': 'Resource'},
     'item':     {'prefix': 'item',      'magic': MS2F_MAGIC, 'target': 'Resource'},
+    'Xml':      {'prefix': 'Xml',       'magic': MS2F_MAGIC, 'target': ''},
 }
 
 NS2F_RESOURCES = {
@@ -394,16 +395,16 @@ def pack_ms2f_resource(r, keys, output_dir):
         encrypted = aes_ctr_ecb_encrypt(msk[file_ki], miv[file_ki], compressed)
         encoded = base64.b64encode(encrypted)
         m2d_blocks.append(encoded)
-        entry = bytearray(48)
-        struct.pack_into('<I', entry, 0, 0)
-        struct.pack_into('<i', entry, 4, len(m2d_blocks))
-        struct.pack_into('<I', entry, 8, AES_ZLIB)
-        struct.pack_into('<I', entry, 12, 0)
-        struct.pack_into('<Q', entry, 16, m2d_offset)
-        struct.pack_into('<I', entry, 24, len(encoded))
-        struct.pack_into('<I', entry, 28, 0)
-        struct.pack_into('<Q', entry, 32, len(compressed))
-        struct.pack_into('<Q', entry, 40, len(file_data))
+        entry = bytearray(48)  # PackFileHeaderVer1 (MS2F uses Ver1, not Ver3)
+        struct.pack_into('<I', entry, 0, 0)                   # aPackingDef (unused)
+        struct.pack_into('<i', entry, 4, len(m2d_blocks))     # nFileIndex
+        struct.pack_into('<I', entry, 8, AES_ZLIB)            # dwBufferFlag
+        struct.pack_into('<i', entry, 12, 0)                  # Reserved[0]
+        struct.pack_into('<Q', entry, 16, m2d_offset)         # uOffset
+        struct.pack_into('<I', entry, 24, len(encoded))       # uEncodedFileSize
+        struct.pack_into('<i', entry, 28, 0)                  # Reserved[1]
+        struct.pack_into('<Q', entry, 32, len(compressed))    # uCompressedFileSize
+        struct.pack_into('<Q', entry, 40, len(file_data))     # uFileSize
         ft_entries.extend(entry)
         m2d_offset += len(encoded)
 
@@ -598,7 +599,7 @@ def main():
     convertible = []
     for r in selected:
         resolved = RESOURCE_ALIASES.get(r['name'], r['name'])
-        if resolved in OS2F_TO_MS2F:
+        if resolved in CONVERTIBLE_TO_MS2F:
             convertible.append((r, resolved))
     if convertible:
         names = ', '.join(r[0]['name'] for r in convertible)
@@ -614,6 +615,10 @@ def main():
                     r['format'] = 'OS2F'
                     r['cfg'] = OS2F_RESOURCES[resolved]
                     info(f"  {r['name']}: -> OS2F")
+                elif r['format'] == 'MS2F' and resolved in NS2F_RESOURCES:
+                    r['format'] = 'NS2F'
+                    r['cfg'] = NS2F_RESOURCES[resolved]
+                    info(f"  {r['name']}: -> NS2F")
         elif choice == '1':
             for r, resolved in convertible:
                 r['format'] = 'MS2F'
