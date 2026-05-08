@@ -20,6 +20,16 @@ except ImportError:
 
 KEYS_FILE = os.path.join(SCRIPT_DIR, 'orion2_keys.json')
 
+# Steam/CMS BlackCipher key source (overrides MS2F keys from orion2)
+CONFIG_BC = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1].endswith(".bc") else None
+if not CONFIG_BC:
+    # Try default locations
+    for p in [
+        os.path.join(SCRIPT_DIR, 'config.bc'),
+        os.path.join(SCRIPT_DIR, 'BlackCipher', 'config.bc'),
+    ]:
+        if os.path.exists(p): CONFIG_BC = p; break
+
 # ── Colors ───────────────────────────────────────────────────────────
 class C:
     R = '\033[91m'; G = '\033[92m'; Y = '\033[93m'; B = '\033[94m'
@@ -126,17 +136,41 @@ def collect_files(input_dir):
     file_list.sort(key=lambda x: x[0])
     return file_list
 
+
+def parse_config_bc_keys(path):
+    """Parse BlackCipher config.bc hex keys into byte arrays."""
+    with open(path, "r") as f:
+        hex_data = f.read().strip()
+    keys = []
+    for i in range(0, len(hex_data), 64):
+        chunk = hex_data[i:i+64]
+        if len(chunk) == 64:
+            keys.append(bytes(int(chunk[j:j+2], 16) for j in range(0, 64, 2)))
+    return keys
+
 def load_keys():
     if not os.path.exists(KEYS_FILE):
         err(f"Key file not found: {KEYS_FILE}")
         sys.exit(1)
     with open(KEYS_FILE) as f: k = json.load(f)
+
+    # Use config.bc keys for MS2F if available (Steam/CMS)
+    if CONFIG_BC and os.path.exists(CONFIG_BC):
+        print(f'  {C.G}[key]{C.X} Loading MS2F keys from BlackCipher config.bc')
+        bc_keys = parse_config_bc_keys(CONFIG_BC)
+        msk_bc = bc_keys[:128]  # First 128 keys for & 0x7F indexing
+        if len(msk_bc) < 128:
+            warn(f'config.bc only has {len(msk_bc)} keys, expected 128')
+    else:
+        print(f'  {C.Y}[!]{C.X} config.bc not found, using orion2 MS2F keys')
+        msk_bc = [bytes(kk) for kk in k['MS2F_USER_KEY']]
+
     return {
         'osk': [bytes(kk) for kk in k['OS2F_USER_KEY']],
         'oiv': [bytes(iv) for iv in k['OS2F_IV_CHAIN']],
-        'msk': [bytes(kk) for kk in k['MS2F_USER_KEY']],
+        'msk': msk_bc,
         'miv': [bytes(iv) for iv in k['MS2F_IV_CHAIN']],
-        'nsk': [bytes(kk) for kk in k['NS2F_USER_KEY']],
+        'nsk': [bytes(kk) for kk in k.get('NS2F_USER_KEY', [])],
         'niv': [bytes(iv) for iv in k['NS2F_IV_CHAIN']],
         'psk': bytes(k.get('PS2F_XOR_KEY', [])) * 4,
     }
