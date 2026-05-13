@@ -38,7 +38,27 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 KEYS_FILE = os.path.join(SCRIPT_DIR, 'orion2_keys.json')
 
+# Steam/CMS BlackCipher key source (overrides MS2F keys)
+def _get_config_bc():
+    for p in [os.path.join(SCRIPT_DIR, "config.bc"),
+              os.path.join(SCRIPT_DIR, "BlackCipher", "config.bc")]:
+        if os.path.exists(p): return p
+    return None
+
+
 # ── Crypto ───────────────────────────────────────────────────────────
+
+
+def parse_config_bc_keys(path):
+    """Parse BlackCipher config.bc hex keys into byte arrays."""
+    with open(path, "r") as f:
+        hex_data = f.read().strip()
+    keys = []
+    for i in range(0, len(hex_data), 64):
+        chunk = hex_data[i:i+64]
+        if len(chunk) == 64:
+            keys.append(bytes(int(chunk[j:j+2], 16) for j in range(0, 64, 2)))
+    return keys
 
 def aes_ctr_ecb_encrypt(key, iv, data):
     from Crypto.Cipher import AES
@@ -547,6 +567,17 @@ def main():
     osk = [bytes(kk) for kk in k['OS2F_USER_KEY']]
     oiv = [bytes(iv) for iv in k['OS2F_IV_CHAIN']]
     msk = [bytes(kk) for kk in k['MS2F_USER_KEY']]
+
+    # Override MS2F keys with config.bc if available (Steam/CMS)
+    config_bc = _get_config_bc()
+    if config_bc:
+        print(f'[key] Loading MS2F keys from BlackCipher: {config_bc}')
+        bc_keys = parse_config_bc_keys(config_bc)
+        msk = bc_keys[:128]  # First 128 keys for & 0x7F indexing
+        if len(msk) < 128:
+            print(f'  Warning: config.bc only has {len(msk)} keys, expected 128')
+    else:
+        print('[!] config.bc not found, using orion2 MS2F keys')
     miv = [bytes(iv) for iv in k['MS2F_IV_CHAIN']]
     nsk = [bytes(kk) for kk in k['NS2F_USER_KEY']]
     niv = [bytes(iv) for iv in k['NS2F_IV_CHAIN']]
