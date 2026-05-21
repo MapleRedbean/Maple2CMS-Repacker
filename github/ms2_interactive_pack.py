@@ -30,6 +30,9 @@ if not CONFIG_BC:
     ]:
         if os.path.exists(p): CONFIG_BC = p; break
 
+# Global flag: force orion2 keys even if config.bc exists
+FORCE_ORION2_KEYS = False
+
 # ── Colors ───────────────────────────────────────────────────────────
 class C:
     R = '\033[91m'; G = '\033[92m'; Y = '\033[93m'; B = '\033[94m'
@@ -155,7 +158,10 @@ def load_keys():
     with open(KEYS_FILE) as f: k = json.load(f)
 
     # Use config.bc keys for MS2F if available (Steam/CMS)
-    if CONFIG_BC and os.path.exists(CONFIG_BC):
+    if FORCE_ORION2_KEYS:
+        print(f'  {C.Y}[!]{C.X} config.bc bypassed, using orion2 MS2F keys')
+        msk_bc = [bytes(kk) for kk in k['MS2F_USER_KEY']]
+    elif CONFIG_BC and os.path.exists(CONFIG_BC):
         print(f'  {C.G}[key]{C.X} Loading MS2F keys from BlackCipher config.bc')
         bc_keys = parse_config_bc_keys(CONFIG_BC)
         msk_bc = bc_keys[:128]  # First 128 keys for & 0x7F indexing
@@ -642,6 +648,11 @@ def main():
         print(f"  {C.B}[1] MS2F{C.X} (single M2D, compact — RECOMMENDED)")
         print(f"  {C.B}[2] OS2F{C.X} (multi-volume M2D, classic CMS)")
         print(f"  {C.B}[3] Per-resource auto{C.X} (keep original format)")
+        print(f"  {C.B}[4] MS2F (orion2 keys){C.X} (single M2D, original orion2 encryption)")
+        # Show NS2F only when applicable resources present
+        can_ns2f = [r for _, r in convertible if r in NS2F_RESOURCES]
+        if can_ns2f:
+            print(f"  {C.B}[5] NS2F{C.X}  (PackStreamVer2, CN WeGame XML format) [[" + ", ".join(can_ns2f) + "]]")
         choice = prompt("Format", "1")
         if choice == '2':
             for r, resolved in convertible:
@@ -658,6 +669,20 @@ def main():
                 r['format'] = 'MS2F'
                 r['cfg'] = MS2F_STREAM_RESOURCES[resolved]
                 info(f"  {r['name']}: -> MS2F")
+        elif choice == '4':
+            global FORCE_ORION2_KEYS; FORCE_ORION2_KEYS = True
+            for r, resolved in convertible:
+                r['format'] = 'MS2F'
+                r['cfg'] = MS2F_STREAM_RESOURCES[resolved]
+                info(f"  {r['name']}: -> MS2F (orion2 keys)")
+        elif choice == '5':
+            for r, resolved in convertible:
+                if resolved in NS2F_RESOURCES:
+                    r['format'] = 'NS2F'
+                    r['cfg'] = NS2F_RESOURCES[resolved]
+                    info(f"  {r['name']}: -> NS2F")
+                else:
+                    warn(f"  {r['name']}: NS2F not supported, keeping {r['format']}")
         # choice 3 = keep auto-detected format
 
     print(f"\n{C.W}- Step 4: Output Base{C.X}")
